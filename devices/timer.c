@@ -24,6 +24,22 @@ static int64_t ticks;
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
 
+
+static struct list lista_dormindo;
+
+static bool
+despertar_menor (const struct list_elem *a, const struct list_elem *b,
+                 void *aux UNUSED)
+{
+  const struct thread *ta = list_entry (a, struct thread, elem);
+  const struct thread *tb = list_entry (b, struct thread, elem);
+
+  if (ta->tick_despertar != tb->tick_despertar)
+    return ta->tick_despertar < tb->tick_despertar;
+  return ta->priority > tb->priority;
+}
+
+
 static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
@@ -35,6 +51,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 void
 timer_init (void) 
 {
+  list_init (&lista_dormindo);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
