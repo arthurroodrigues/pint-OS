@@ -106,11 +106,18 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
+  struct thread *atual = thread_current ();
+  enum intr_level nivel_antigo;
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  if (ticks <= 0)
+    return;
+
+  nivel_antigo = intr_disable ();
+  atual->tick_despertar = timer_ticks () + ticks;
+  list_insert_ordered (&lista_dormindo, &atual->elem, despertar_menor, NULL);
+  thread_block ();
+  intr_set_level (nivel_antigo);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
