@@ -195,6 +195,15 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  while (!list_empty (&lista_dormindo))
+    {
+      struct thread *t = list_entry (list_front (&lista_dormindo),
+                                     struct thread, elem);
+      if (t->tick_despertar > ticks)
+        break;
+      list_pop_front (&lista_dormindo);
+      thread_unblock (t);
+    }
   thread_tick ();
 }
 
